@@ -1,3 +1,30 @@
+class DSLValue {
+private:
+  using InternalType =
+      std::variant<std::monostate, bool, std::string, int, double, List, Map>;
+  InternalType value;
+
+
+public:
+  template <UnaryDSLOperation F> decltype(auto) unaryOperation(F &&f) {
+    return std::visit(f, value);
+  }
+
+  template <UnaryDSLOperation F> decltype(auto) unaryOperation(F &&f) const {
+    return std::visit(f, value);
+  }
+
+  template <DSL U, BinaryDSLOperation F>
+  decltype(auto) binaryOperation(U &&other, F &&f) {
+    return std::visit(f, value, other.value);
+  }
+
+  template <DSL U, BinaryDSLOperation F>
+  decltype(auto) binaryOperation(const U &other, F &&f) const {
+    return std::visit(f, value, other.value);
+  }
+}
+
 bool keysExist(const List &list, const std::string &key) {
   auto it = list | ranges::views::transform(
                        [&key](const auto &x) { return x.at(key); });
@@ -79,25 +106,4 @@ void deal(DSLValue &from, DSLValue &to, size_t count) noexcept {
 }
 ostream &operator<<(ostream &os, const DSLValue &x) noexcept {
   return x.unaryOperation(Print{os});
-}
-
-class DSLValue {
-public:
-  template <UnaryDSLOperation F> decltype(auto) unaryOperation(F &&f) {
-    return std::visit(f, value);
-  }
-
-  template <UnaryDSLOperation F> decltype(auto) unaryOperation(F &&f) const {
-    return std::visit(f, value);
-  }
-
-  template <DSL U, BinaryDSLOperation F>
-  decltype(auto) binaryOperation(U &&other, F &&f) {
-    return std::visit(f, value, other.value);
-  }
-
-  template <DSL U, BinaryDSLOperation F>
-  decltype(auto) binaryOperation(const U &other, F &&f) const {
-    return std::visit(f, value, other.value);
-  }
 }
